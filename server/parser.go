@@ -6,7 +6,8 @@ import (
 
 type parserState int
 type parseState struct {
-	state parserState
+	state  parserState
+	argBuf []byte
 }
 
 const (
@@ -137,13 +138,15 @@ func (c *client) parse(buf []byte) error {
 			}
 		case OP_CONNECT:
 			switch b {
-			case ' ':
-				c.state = CONNECT_ARG
+			case ' ', '\t':
+				continue
 			default:
-				goto parseErr
+				c.state = CONNECT_ARG
 			}
 		case CONNECT_ARG:
 			switch b {
+			case '\r':
+				continue
 			case '{':
 				continue
 			case '}':
@@ -151,6 +154,8 @@ func (c *client) parse(buf []byte) error {
 			case '\n':
 				//TODO: process CONNECT {} command
 				c.state = OP_START
+			default:
+				c.argBuf = append(c.argBuf, b)
 			}
 		default:
 			goto parseErr

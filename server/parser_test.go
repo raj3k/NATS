@@ -90,4 +90,10 @@ func TestParseConnect(t *testing.T) {
 	if err != nil || c.state != OP_START {
 		t.Fatalf("Unexpected: %d : %v\n", c.state, err)
 	}
+
+	connectWithArg := []byte("CONNECT {\"start\":true}\r\n")
+	err = c.parse(connectWithArg)
+	if err != nil || c.state != OP_START {
+		t.Fatalf("Unexpected: %d : %v\n", c.state, err)
+	}
 }
