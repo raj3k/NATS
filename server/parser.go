@@ -20,6 +20,12 @@ const (
 	OP_PONG
 	OP_C
 	OP_CO
+	OP_CON
+	OP_CONN
+	OP_CONNE
+	OP_CONNEC
+	OP_CONNECT
+	CONNECT_ARG
 )
 
 func (c *client) parse(buf []byte) error {
@@ -64,6 +70,7 @@ func (c *client) parse(buf []byte) error {
 		case OP_PING:
 			switch b {
 			case '\n':
+				//TODO: process ping command
 				c.state = OP_START
 			}
 		case OP_PO:
@@ -83,6 +90,7 @@ func (c *client) parse(buf []byte) error {
 		case OP_PONG:
 			switch b {
 			case '\n':
+				//TODO: process PONG command
 				c.state = OP_START
 			}
 		case OP_C:
@@ -91,6 +99,58 @@ func (c *client) parse(buf []byte) error {
 				c.state = OP_CO
 			default:
 				goto parseErr
+			}
+		case OP_CO:
+			switch b {
+			case 'N', 'n':
+				c.state = OP_CON
+			default:
+				goto parseErr
+			}
+		case OP_CON:
+			switch b {
+			case 'N', 'n':
+				c.state = OP_CONN
+			default:
+				goto parseErr
+			}
+		case OP_CONN:
+			switch b {
+			case 'E', 'e':
+				c.state = OP_CONNE
+			default:
+				goto parseErr
+			}
+		case OP_CONNE:
+			switch b {
+			case 'C', 'c':
+				c.state = OP_CONNEC
+			default:
+				goto parseErr
+			}
+		case OP_CONNEC:
+			switch b {
+			case 'T', 't':
+				c.state = OP_CONNECT
+			default:
+				goto parseErr
+			}
+		case OP_CONNECT:
+			switch b {
+			case ' ':
+				c.state = CONNECT_ARG
+			default:
+				goto parseErr
+			}
+		case CONNECT_ARG:
+			switch b {
+			case '{':
+				continue
+			case '}':
+				continue
+			case '\n':
+				//TODO: process CONNECT {} command
+				c.state = OP_START
 			}
 		default:
 			goto parseErr
