@@ -6,8 +6,16 @@ import (
 
 type parserState int
 type parseState struct {
-	state  parserState
-	argBuf []byte
+	state   parserState
+	argBuf  []byte
+	msgBuff []byte
+	pa      PubArg
+}
+
+type PubArg struct {
+	arg     []byte
+	subject []byte
+	size    int
 }
 
 const (
@@ -27,6 +35,15 @@ const (
 	OP_CONNEC
 	OP_CONNECT
 	CONNECT_ARG
+	OP_PU
+	OP_PUB
+	OP_PUB_SPACE
+	PUB_ARG
+	OP_S
+	OP_SU
+	OP_SUB
+	SUB_ARG
+	MSG_PAYLOAD
 )
 
 func (c *client) parse(buf []byte) error {
@@ -51,6 +68,8 @@ func (c *client) parse(buf []byte) error {
 				c.state = OP_PI
 			case 'O', 'o':
 				c.state = OP_PO
+			case 'U', 'u':
+				c.state = OP_PU
 			default:
 				goto parseErr
 			}
@@ -157,6 +176,53 @@ func (c *client) parse(buf []byte) error {
 			default:
 				c.argBuf = append(c.argBuf, b)
 			}
+		case OP_PU:
+			switch b {
+			case 'B', 'b':
+				c.state = OP_PUB
+			default:
+				goto parseErr
+			}
+		case OP_PUB:
+			switch b {
+			case ' ', '\t':
+				c.state = OP_PUB_SPACE
+			default:
+				goto parseErr
+			}
+		case OP_PUB_SPACE:
+			switch b {
+			case ' ', '\t':
+				continue
+			default:
+				c.state = PUB_ARG
+				// TODO: for now, think how to implement this in other way
+				c.argBuf = append(c.argBuf, b)
+			}
+		case PUB_ARG:
+			switch b {
+			case '\r':
+			case '\n':
+				var arg []byte
+				if c.argBuf != nil {
+					arg = c.argBuf
+					c.argBuf = nil
+				} else {
+					arg = buf[:]
+				}
+				err := c.processPub(arg)
+				if err != nil {
+					return err
+				}
+				//TODO: think if this logic is sufficient for now
+				c.state = MSG_PAYLOAD
+			default:
+				if c.argBuf != nil {
+					c.argBuf = append(c.argBuf, b)
+				}
+			}
+		case MSG_PAYLOAD:
+		// TODO: implement login for MSG payload
 		default:
 			goto parseErr
 		}

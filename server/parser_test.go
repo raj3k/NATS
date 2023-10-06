@@ -85,14 +85,38 @@ func TestParseConnect(t *testing.T) {
 	if c.state != OP_START {
 		t.Fatalf("Expected OP_START, got: %v\n", c.state)
 	}
-	connect := []byte("CONNECT {}\r\n")
+	connect := []byte("CONNECT     {}\r\n")
 	err := c.parse(connect)
 	if err != nil || c.state != OP_START {
 		t.Fatalf("Unexpected: %d : %v\n", c.state, err)
 	}
 
-	connectWithArg := []byte("CONNECT {\"start\":true}\r\n")
+	connectWithArg := []byte("CONNECT   {\"start\":true}\r\n")
 	err = c.parse(connectWithArg)
+	if err != nil || c.state != OP_START {
+		t.Fatalf("Unexpected: %d : %v\n", c.state, err)
+	}
+}
+
+func TestParsePub(t *testing.T) {
+	c := dummyClient()
+	if c.state != OP_START {
+		t.Fatalf("Expected OP_START, got: %v\n", c.state)
+	}
+	pub := []byte("PUB Code 5\r\nHello\r\n")
+	err := c.parse(pub)
+	if err != nil || c.state != OP_START {
+		t.Fatalf("Unexpected: %d : %v\n", c.state, err)
+	}
+}
+
+func TestParseSub(t *testing.T) {
+	c := dummyClient()
+	if c.state != OP_START {
+		t.Fatalf("Expected OP_START, got: %v\n", c.state)
+	}
+	sub := []byte("SUB FOO 1\r\n")
+	err := c.parse(sub)
 	if err != nil || c.state != OP_START {
 		t.Fatalf("Unexpected: %d : %v\n", c.state, err)
 	}
