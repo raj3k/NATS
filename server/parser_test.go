@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -120,4 +121,8 @@ func TestParseSub(t *testing.T) {
 	if err != nil || c.state != OP_START {
 		t.Fatalf("Unexpected: %d : %v\n", c.state, err)
 	}
+}
+
+func TestSomething(t *testing.T) {
+	fmt.Print("This is test")
 }
