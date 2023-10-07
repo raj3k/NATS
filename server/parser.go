@@ -222,6 +222,10 @@ func (c *client) parse(buf []byte) error {
 				}
 			}
 		case MSG_PAYLOAD:
+			switch b {
+			default:
+
+			}
 		// TODO: implement login for MSG payload
 		default:
 			goto parseErr
