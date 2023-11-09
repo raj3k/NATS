@@ -6,6 +6,10 @@ type client struct {
 	parseState
 }
 
+func NewClient() *client {
+	return &client{}
+}
+
 func (c *client) processPub(arg []byte) error {
 	//a := [2][]byte{}
 	var args [][]byte

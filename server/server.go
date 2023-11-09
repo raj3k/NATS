@@ -1,7 +1,6 @@
 package server
 
 import (
-	"io"
 	"log"
 	"net"
 )
@@ -29,6 +28,31 @@ func Run() {
 func handleClient(c net.Conn) {
 	defer c.Close()
 
-	io.Copy(c, c)
+	client := NewClient()
+
+	// io.Copy(c, c)
+
+	buffer := make([]byte, 1024)
+
+	for {
+		n, err := c.Read(buffer)
+		if err != nil {
+			log.Println("Failed to read data.", err)
+			return
+		}
+
+		// fmt.Println(buffer[:n])
+
+		client.parse(buffer[:n])
+
+		// fmt.Printf("Received: %s\n", buffer[:n])
+
+		data := buffer[:n]
+		_, err = c.Write(data)
+		if err != nil {
+			log.Println("Failed to send data.", err)
+			return
+		}
+	}
 
 }
