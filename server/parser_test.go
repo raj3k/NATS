@@ -1,7 +1,6 @@
 package server
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -12,7 +11,7 @@ func dummyClient() *client {
 func TestParsePing(t *testing.T) {
 	c := dummyClient()
 	if c.state != OP_START {
-		t.Fatalf("Expected OP_START, got: %d\n", c.state)
+		t.Fatalf("Expected OP_START vs %d\n", c.state)
 	}
 	ping := []byte("PING\r\n")
 	err := c.parse(ping[:1])
@@ -121,8 +120,4 @@ func TestParseSub(t *testing.T) {
 	if err != nil || c.state != OP_START {
 		t.Fatalf("Unexpected: %d : %v\n", c.state, err)
 	}
-}
-
-func TestSomething(t *testing.T) {
-	fmt.Print("This is test")
 }

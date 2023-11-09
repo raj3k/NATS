@@ -44,6 +44,8 @@ const (
 	OP_SUB
 	SUB_ARG
 	MSG_PAYLOAD
+	MSG_END_R
+	MSG_END_N
 )
 
 func (c *client) parse(buf []byte) error {
@@ -90,7 +92,7 @@ func (c *client) parse(buf []byte) error {
 		case OP_PING:
 			switch b {
 			case '\n':
-				//TODO: process ping command
+				c.processPing()
 				c.state = OP_START
 			}
 		case OP_PO:
@@ -224,9 +226,26 @@ func (c *client) parse(buf []byte) error {
 		case MSG_PAYLOAD:
 			switch b {
 			default:
-				print("test")
+				c.msgBuff = append(c.msgBuff, b)
+				if len(c.msgBuff) >= c.pa.size {
+					c.state = MSG_END_R
+				}
 			}
-		// TODO: implement login for MSG payload
+		case MSG_END_R:
+			switch b {
+			case '\r':
+				c.state = MSG_END_N
+			default:
+				goto parseErr
+			}
+		case MSG_END_N:
+			switch b {
+			case '\n':
+				c.processInboundMessage(c.msgBuff)
+				c.state = OP_START
+			default:
+				goto parseErr
+			}
 		default:
 			goto parseErr
 		}
