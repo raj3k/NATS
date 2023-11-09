@@ -1,5 +1,7 @@
 package server
 
+import "fmt"
+
 type client struct {
 	parseState
 }
@@ -28,4 +30,17 @@ func (c *client) processPub(arg []byte) error {
 	c.pa.subject = args[0]
 	c.pa.size = parseSize(args[1])
 	return nil
+}
+
+func (c *client) processInboundMessage(msg []byte) {
+	// TODO: To be implemented
+	fmt.Println(string(msg))
+}
+
+func (c *client) processPing() {
+	c.sendPong()
+}
+
+func (c *client) sendPong() {
+	fmt.Println("PONG")
 }
