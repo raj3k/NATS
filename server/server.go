@@ -28,9 +28,7 @@ func Run() {
 func handleClient(c net.Conn) {
 	defer c.Close()
 
-	client := NewClient()
-
-	// io.Copy(c, c)
+	client := NewClient(c)
 
 	buffer := make([]byte, 1024)
 
@@ -44,12 +42,12 @@ func handleClient(c net.Conn) {
 		if string(buffer[:n-2]) == "PING" {
 			client.parse(buffer[:n])
 
-			pong := []byte("PONG\r\n")
-			_, err := c.Write(pong)
-			if err != nil {
-				log.Println("Failed to send PONG response.", err)
-				return
-			}
+			// pong := []byte("PONG\r\n")
+			// _, err := c.Write(pong)
+			// if err != nil {
+			// 	log.Println("Failed to send PONG response.", err)
+			// 	return
+			// }
 			continue
 		}
 

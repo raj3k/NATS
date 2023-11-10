@@ -1,13 +1,24 @@
 package server
 
-import "fmt"
+import (
+	"fmt"
+	"net"
+)
 
 type client struct {
 	parseState
+	out  outbound
+	conn net.Conn
 }
 
-func NewClient() *client {
-	return &client{}
+type outbound struct {
+	nb net.Buffers
+}
+
+func NewClient(c net.Conn) *client {
+	return &client{
+		conn: c,
+	}
 }
 
 func (c *client) processPub(arg []byte) error {
@@ -45,5 +56,7 @@ func (c *client) processPing() {
 }
 
 func (c *client) sendPong() {
-	fmt.Println("PONG")
+	// TODO: work on outbound & processing messages to client
+	c.out.nb = append(c.out.nb, []byte("PONG\r\n"))
+	c.out.nb.WriteTo(c.conn)
 }
