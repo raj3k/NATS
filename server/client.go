@@ -11,7 +11,6 @@ func NewClient() *client {
 }
 
 func (c *client) processPub(arg []byte) error {
-	//a := [2][]byte{}
 	var args [][]byte
 	start := -1
 	for i, b := range arg {

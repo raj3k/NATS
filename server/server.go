@@ -41,9 +41,17 @@ func handleClient(c net.Conn) {
 			return
 		}
 
-		// fmt.Println(buffer[:n])
+		if string(buffer[:n-2]) == "PING" {
+			client.parse(buffer[:n])
 
-		client.parse(buffer[:n])
+			pong := []byte("PONG\r\n")
+			_, err := c.Write(pong)
+			if err != nil {
+				log.Println("Failed to send PONG response.", err)
+				return
+			}
+			continue
+		}
 
 		// fmt.Printf("Received: %s\n", buffer[:n])
 
