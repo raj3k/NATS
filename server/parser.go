@@ -174,6 +174,14 @@ func (c *client) parse(buf []byte) error {
 				continue
 			case '\n':
 				//TODO: process CONNECT {} command
+				var arg []byte
+				if c.argBuf != nil {
+					arg = c.argBuf
+					c.argBuf = nil
+				}
+
+				c.processConnect(arg)
+
 				c.state = OP_START
 			default:
 				c.argBuf = append(c.argBuf, b)
@@ -242,6 +250,7 @@ func (c *client) parse(buf []byte) error {
 			switch b {
 			case '\n':
 				c.processInboundMessage(c.msgBuff)
+				c.argBuf, c.msgBuff = nil, nil
 				c.state = OP_START
 			default:
 				goto parseErr

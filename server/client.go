@@ -5,10 +5,19 @@ import (
 	"net"
 )
 
+const (
+	CRLF = "\r\n"
+)
+
+const (
+	pong = "PONG" + CRLF
+	ok   = "+OK" + CRLF
+)
+
 type client struct {
 	parseState
-	out  outbound
-	conn net.Conn
+	out outbound
+	nc  net.Conn
 }
 
 type outbound struct {
@@ -17,7 +26,7 @@ type outbound struct {
 
 func NewClient(c net.Conn) *client {
 	return &client{
-		conn: c,
+		nc: c,
 	}
 }
 
@@ -49,6 +58,8 @@ func (c *client) processPub(arg []byte) error {
 func (c *client) processInboundMessage(msg []byte) {
 	// TODO: To be implemented
 	fmt.Println(string(msg))
+	c.out.nb = append(c.out.nb, []byte(ok))
+	c.out.nb.WriteTo(c.nc)
 }
 
 func (c *client) processPing() {
@@ -57,6 +68,12 @@ func (c *client) processPing() {
 
 func (c *client) sendPong() {
 	// TODO: work on outbound & processing messages to client
-	c.out.nb = append(c.out.nb, []byte("PONG\r\n"))
-	c.out.nb.WriteTo(c.conn)
+	c.out.nb = append(c.out.nb, []byte(pong))
+	c.out.nb.WriteTo(c.nc)
+}
+
+func (c *client) processConnect(arg []byte) {
+	fmt.Println(string(arg))
+	c.out.nb = append(c.out.nb, []byte(ok))
+	c.out.nb.WriteTo(c.nc)
 }
