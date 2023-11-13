@@ -5,6 +5,9 @@ import (
 )
 
 func main() {
-
-	server.Run()
+	cfg := server.Config{
+		ListenAddr: "localhost:4222",
+	}
+	s := server.NewServer(&cfg)
+	s.Run()
 }
