@@ -1,11 +1,14 @@
 package server
 
 import (
+	"net"
 	"testing"
 )
 
 func dummyClient() *client {
-	return &client{}
+	return &client{
+		nc: &net.TCPConn{},
+	}
 }
 
 func TestParsePing(t *testing.T) {
