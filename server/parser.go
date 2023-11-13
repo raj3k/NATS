@@ -42,6 +42,7 @@ const (
 	OP_S
 	OP_SU
 	OP_SUB
+	OP_SUB_SPACE
 	SUB_ARG
 	MSG_PAYLOAD
 	MSG_END_R
@@ -61,6 +62,8 @@ func (c *client) parse(buf []byte) error {
 				c.state = OP_P
 			case 'C', 'c':
 				c.state = OP_C
+			case 'S', 's':
+				c.state = OP_S
 			default:
 				goto parseErr
 			}
@@ -182,6 +185,8 @@ func (c *client) parse(buf []byte) error {
 
 				c.processConnect(arg)
 
+				c.argBuf = nil
+
 				c.state = OP_START
 			default:
 				c.argBuf = append(c.argBuf, b)
@@ -254,6 +259,50 @@ func (c *client) parse(buf []byte) error {
 				c.state = OP_START
 			default:
 				goto parseErr
+			}
+		case OP_S:
+			switch b {
+			case 'U', 'u':
+				c.state = OP_SU
+			default:
+				goto parseErr
+			}
+		case OP_SU:
+			switch b {
+			case 'B', 'b':
+				c.state = OP_SUB
+			default:
+				goto parseErr
+			}
+		case OP_SUB:
+			switch b {
+			case ' ', '\t':
+				c.state = OP_SUB_SPACE
+			default:
+				goto parseErr
+			}
+		case OP_SUB_SPACE:
+			switch b {
+			case ' ', '\t':
+				continue
+			default:
+				c.state = SUB_ARG
+			}
+		case SUB_ARG:
+			switch b {
+			case '\r':
+				continue
+			case '\n':
+				var arg []byte
+				if c.argBuf != nil {
+					arg = c.argBuf
+					c.argBuf = nil
+				}
+
+				c.processSub(arg)
+
+				c.argBuf = nil
+				c.state = OP_START
 			}
 		default:
 			goto parseErr

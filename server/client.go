@@ -16,12 +16,23 @@ const (
 
 type client struct {
 	parseState
-	out outbound
-	nc  net.Conn
+	out   outbound
+	nc    net.Conn
+	flags clientFlag
 }
 
 type outbound struct {
 	nb net.Buffers
+}
+
+const (
+	connectReceived clientFlag = 1 << iota
+)
+
+type clientFlag uint16
+
+func (cf *clientFlag) set(c clientFlag) {
+	*cf |= c
 }
 
 func NewClient(c net.Conn) *client {
@@ -73,6 +84,13 @@ func (c *client) sendPong() {
 }
 
 func (c *client) processConnect(arg []byte) {
+	// fmt.Println(string(arg))
+	c.flags.set(connectReceived)
+	c.out.nb = append(c.out.nb, []byte(ok))
+	c.out.nb.WriteTo(c.nc)
+}
+
+func (c *client) processSub(arg []byte) {
 	fmt.Println(string(arg))
 	c.out.nb = append(c.out.nb, []byte(ok))
 	c.out.nb.WriteTo(c.nc)
