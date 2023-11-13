@@ -5,6 +5,12 @@ import (
 	"net"
 )
 
+type Server struct {
+}
+
+type Config struct {
+}
+
 func Run() {
 	addr := "localhost:4222"
 	l, err := net.Listen("tcp", addr)
@@ -44,5 +50,6 @@ func handleClient(c net.Conn) {
 			log.Println("Failed to parse data.", err)
 			return
 		}
+		log.Printf("Server processed command: %s", buffer[:n])
 	}
 }
