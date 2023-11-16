@@ -5,12 +5,15 @@ import (
 	"log"
 	"net"
 	"sync"
+	"sync/atomic"
 )
 
 type Server struct {
 	*Config
-	clients map[uint64]*client
-	mu      sync.RWMutex
+	clients      map[uint64]*client
+	mu           sync.RWMutex
+	topics       map[string]Queue
+	totalClients uint64
 }
 
 type Config struct {
@@ -18,22 +21,27 @@ type Config struct {
 }
 
 func NewServer(cfg *Config) *Server {
-	return &Server{Config: cfg, clients: make(map[uint64]*client)}
+	return &Server{
+		Config:  cfg,
+		clients: make(map[uint64]*client),
+		topics:  make(map[string]Queue),
+	}
 }
 
 func (s *Server) acceptConn(conn net.Conn) {
-	client := &client{
-		nc: conn,
-	}
+	client := NewClient(conn, s)
 
 	s.mu.Lock()
-	clientID := uint64(len(s.clients) + 1)
-	s.clients[clientID] = client
+
+	s.clients[client.cid] = client
+
 	s.mu.Unlock()
 
-	fmt.Printf("Client %d connected\n", clientID)
+	atomic.AddUint64(&s.totalClients, 1)
 
-	s.handleClient(clientID)
+	fmt.Printf("Client %d connected\n", client.cid)
+
+	s.handleClient(client.cid)
 }
 
 func (s *Server) getClient(cid uint64) *client {
@@ -89,6 +97,19 @@ func (s *Server) handleClient(clientID uint64) {
 			log.Println("Failed to parse data.", err)
 			return
 		}
-		log.Printf("Client: %d; Server processed command: %s", clientID, buffer[:n])
+
+		log.Printf("Client: %d; Server processed command: %s", client.cid, buffer[:n])
 	}
+}
+
+func (s *Server) createTopic(name string) bool {
+	if _, ok := s.topics[name]; !ok {
+		s.topics[name] = NewMemoryStore()
+		return true
+	}
+	return false
+}
+
+func (s *Server) subscribe(c *client, topic string) {
+	// TODO: create store/queue and then move on with implementation
 }
