@@ -13,9 +13,9 @@ type parseState struct {
 }
 
 type PubArg struct {
-	arg     []byte
-	subject []byte
-	size    int
+	arg   []byte
+	topic []byte
+	size  int
 }
 
 const (
@@ -287,6 +287,7 @@ func (c *client) parse(buf []byte) error {
 				continue
 			default:
 				c.state = SUB_ARG
+				c.argBuf = append(c.argBuf, b)
 			}
 		case SUB_ARG:
 			switch b {
@@ -297,12 +298,19 @@ func (c *client) parse(buf []byte) error {
 				if c.argBuf != nil {
 					arg = c.argBuf
 					c.argBuf = nil
+				} else {
+					// TODO: cut SUB from buffer
+					arg = buf[:]
 				}
 
-				c.processSub(arg)
+				c.parseSub(arg)
 
 				c.argBuf = nil
 				c.state = OP_START
+			default:
+				if c.argBuf != nil {
+					c.argBuf = append(c.argBuf, b)
+				}
 			}
 		default:
 			goto parseErr

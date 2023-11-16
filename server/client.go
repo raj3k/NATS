@@ -3,6 +3,8 @@ package server
 import (
 	"fmt"
 	"net"
+	"sync"
+	"sync/atomic"
 )
 
 const (
@@ -16,28 +18,30 @@ const (
 
 type client struct {
 	parseState
-	out   outbound
-	nc    net.Conn
-	flags clientFlag
+	out  outbound
+	nc   net.Conn
+	cid  uint64
+	srv  *Server
+	subs map[string]*subscription
+	mu   sync.RWMutex
+}
+
+type subscription struct {
+	client *client
+	topic  []byte
+	sid    []byte
 }
 
 type outbound struct {
 	nb net.Buffers
 }
 
-const (
-	connectReceived clientFlag = 1 << iota
-)
-
-type clientFlag uint16
-
-func (cf *clientFlag) set(c clientFlag) {
-	*cf |= c
-}
-
-func NewClient(c net.Conn) *client {
+func NewClient(c net.Conn, srv *Server) *client {
 	return &client{
-		nc: c,
+		nc:   c,
+		cid:  atomic.AddUint64(&srv.totalClients, 1),
+		srv:  srv,
+		subs: make(map[string]*subscription),
 	}
 }
 
@@ -61,7 +65,7 @@ func (c *client) processPub(arg []byte) error {
 		args = append(args, arg[start:])
 	}
 	c.pa.arg = arg
-	c.pa.subject = args[0]
+	c.pa.topic = args[0]
 	c.pa.size = parseSize(args[1])
 	return nil
 }
@@ -78,20 +82,42 @@ func (c *client) processPing() {
 }
 
 func (c *client) sendPong() {
-	// TODO: work on outbound & processing messages to client
 	c.out.nb = append(c.out.nb, []byte(pong))
 	c.out.nb.WriteTo(c.nc)
 }
 
 func (c *client) processConnect(arg []byte) {
-	// fmt.Println(string(arg))
-	c.flags.set(connectReceived)
 	c.out.nb = append(c.out.nb, []byte(ok))
 	c.out.nb.WriteTo(c.nc)
 }
 
-func (c *client) processSub(arg []byte) {
-	fmt.Println(string(arg))
+func (c *client) parseSub(argo []byte) {
+
+	args := splitArg(argo)
+	t, sid := args[0], args[1]
+
+	c.processSub(t, sid)
+}
+
+func (c *client) processSub(topic []byte, bsid []byte) {
+
+	sub := &subscription{
+		client: c,
+		topic:  topic,
+		sid:    bsid,
+	}
+
+	c.mu.Lock()
+
+	sid := string(sub.sid)
+
+	s := c.subs[sid]
+	if s == nil {
+		c.subs[sid] = sub
+	}
+
+	c.mu.Unlock()
+
 	c.out.nb = append(c.out.nb, []byte(ok))
 	c.out.nb.WriteTo(c.nc)
 }
