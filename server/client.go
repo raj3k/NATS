@@ -46,24 +46,8 @@ func NewClient(c net.Conn, srv *Server) *client {
 }
 
 func (c *client) processPub(arg []byte) error {
-	var args [][]byte
-	start := -1
-	for i, b := range arg {
-		switch b {
-		case ' ', '\t':
-			if start >= 0 {
-				args = append(args, arg[start:i])
-				start = -1
-			}
-		default:
-			if start < 0 {
-				start = i
-			}
-		}
-	}
-	if start >= 0 {
-		args = append(args, arg[start:])
-	}
+	args := splitArg(arg)
+
 	c.pa.arg = arg
 	c.pa.topic = args[0]
 	c.pa.size = parseSize(args[1])
