@@ -64,5 +64,4 @@ func (ms *MemoryStore) Size() int {
 	defer ms.mu.RUnlock()
 
 	return len(ms.data)
-
 }
