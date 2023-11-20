@@ -1,7 +1,6 @@
 package server
 
 import (
-	"fmt"
 	"net"
 	"sync"
 	"sync/atomic"
@@ -55,10 +54,28 @@ func (c *client) processPub(arg []byte) error {
 }
 
 func (c *client) processInboundMessage(msg []byte) {
-	// TODO: To be implemented
-	fmt.Println(string(msg))
+
+	topic := c.pa.topic
+
+	c.mu.Lock()
+	c.srv.topics[string(topic)].Enqueue(msg)
+	c.mu.Unlock()
+
 	c.out.nb = append(c.out.nb, []byte(ok))
 	c.out.nb.WriteTo(c.nc)
+
+	for _, c := range c.srv.clients {
+		for _, sub := range c.subs {
+			c.deliverMsg(sub, topic, msg)
+		}
+	}
+}
+
+func (c *client) deliverMsg(sub *subscription, topic, msg []byte) {
+	// client := sub.client
+
+	c.out.nb = append(c.out.nb, msg)
+	c.out.nb = append(c.out.nb, []byte(CRLF))
 }
 
 func (c *client) processPing() {
@@ -67,12 +84,10 @@ func (c *client) processPing() {
 
 func (c *client) sendPong() {
 	c.out.nb = append(c.out.nb, []byte(pong))
-	c.out.nb.WriteTo(c.nc)
 }
 
 func (c *client) processConnect(arg []byte) {
 	c.out.nb = append(c.out.nb, []byte(ok))
-	c.out.nb.WriteTo(c.nc)
 }
 
 func (c *client) parseSub(argo []byte) {
@@ -98,10 +113,20 @@ func (c *client) processSub(topic []byte, bsid []byte) {
 	s := c.subs[sid]
 	if s == nil {
 		c.subs[sid] = sub
+		c.srv.createTopic(string(topic))
 	}
 
 	c.mu.Unlock()
 
 	c.out.nb = append(c.out.nb, []byte(ok))
-	c.out.nb.WriteTo(c.nc)
+}
+
+func (c *client) writeLoop() {
+	for {
+		c.mu.Lock()
+
+		c.out.nb.WriteTo(c.nc)
+
+		c.mu.Unlock()
+	}
 }

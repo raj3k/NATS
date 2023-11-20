@@ -31,6 +31,8 @@ func NewServer(cfg *Config) *Server {
 func (s *Server) acceptConn(conn net.Conn) {
 	client := NewClient(conn, s)
 
+	go client.writeLoop()
+
 	s.mu.Lock()
 
 	s.clients[client.cid] = client
@@ -108,8 +110,4 @@ func (s *Server) createTopic(name string) bool {
 		return true
 	}
 	return false
-}
-
-func (s *Server) subscribe(c *client, topic string) {
-	// TODO: create store/queue and then move on with implementation
 }
