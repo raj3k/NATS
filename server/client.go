@@ -62,20 +62,30 @@ func (c *client) processInboundMessage(msg []byte) {
 	c.mu.Unlock()
 
 	c.out.nb = append(c.out.nb, []byte(ok))
-	c.out.nb.WriteTo(c.nc)
+	// c.out.nb.WriteTo(c.nc)
 
-	for _, c := range c.srv.clients {
-		for _, sub := range c.subs {
-			c.deliverMsg(sub, topic, msg)
-		}
+	// var sl *Sublist
+
+	// for _, c := range c.srv.clients {
+	// 	for _, sub := range c.subs {
+	// 		c.deliverMsg(sub, topic, msg)
+	// 	}
+	// }
+
+	for _, s := range c.srv.subs.slr[string(topic)] {
+		c.deliverMsg(s, topic, msg)
 	}
+
 }
 
 func (c *client) deliverMsg(sub *subscription, topic, msg []byte) {
 	// client := sub.client
 
-	c.out.nb = append(c.out.nb, msg)
-	c.out.nb = append(c.out.nb, []byte(CRLF))
+	sub.client.out.nb = append(sub.client.out.nb, msg)
+	sub.client.out.nb = append(sub.client.out.nb, []byte(CRLF))
+
+	// c.out.nb = append(c.out.nb, msg)
+	// c.out.nb = append(c.out.nb, []byte(CRLF))
 }
 
 func (c *client) processPing() {
@@ -114,6 +124,7 @@ func (c *client) processSub(topic []byte, bsid []byte) {
 	if s == nil {
 		c.subs[sid] = sub
 		c.srv.createTopic(string(topic))
+		c.srv.subs.slr[string(topic)] = append(c.srv.subs.slr[string(topic)], sub)
 	}
 
 	c.mu.Unlock()

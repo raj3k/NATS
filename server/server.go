@@ -14,6 +14,7 @@ type Server struct {
 	mu           sync.RWMutex
 	topics       map[string]Queue
 	totalClients uint64
+	subs         *Sublist
 }
 
 type Config struct {
@@ -25,6 +26,7 @@ func NewServer(cfg *Config) *Server {
 		Config:  cfg,
 		clients: make(map[uint64]*client),
 		topics:  make(map[string]Queue),
+		subs:    NewSublist(),
 	}
 }
 
