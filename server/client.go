@@ -62,17 +62,8 @@ func (c *client) processInboundMessage(msg []byte) {
 	c.mu.Unlock()
 
 	c.out.nb = append(c.out.nb, []byte(ok))
-	// c.out.nb.WriteTo(c.nc)
 
-	// var sl *Sublist
-
-	// for _, c := range c.srv.clients {
-	// 	for _, sub := range c.subs {
-	// 		c.deliverMsg(sub, topic, msg)
-	// 	}
-	// }
-
-	for _, s := range c.srv.subs.slr[string(topic)] {
+	for _, s := range c.srv.subs.slr[bytesToString(topic)] {
 		c.deliverMsg(s, topic, msg)
 	}
 
@@ -118,12 +109,12 @@ func (c *client) processSub(topic []byte, bsid []byte) {
 
 	c.mu.Lock()
 
-	sid := string(sub.sid)
+	sid := bytesToString(sub.sid)
 
 	s := c.subs[sid]
 	if s == nil {
 		c.subs[sid] = sub
-		c.srv.createTopic(string(topic))
+		c.srv.createTopic(bytesToString(topic))
 		c.srv.subs.slr[string(topic)] = append(c.srv.subs.slr[string(topic)], sub)
 	}
 

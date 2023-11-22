@@ -1,6 +1,9 @@
 package server
 
-import "strconv"
+import (
+	"strconv"
+	"unsafe"
+)
 
 func parseSize(d []byte) int {
 	// Convert the byte slice to a string
@@ -32,4 +35,12 @@ func splitArg(arg []byte) [][]byte {
 		args = append(args, arg[start:])
 	}
 	return args
+}
+
+func bytesToString(b []byte) string {
+	if len(b) == 0 {
+		return ""
+	}
+	p := unsafe.SliceData(b)
+	return unsafe.String(p, len(b))
 }
