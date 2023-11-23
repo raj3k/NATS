@@ -93,6 +93,9 @@ func (s *Server) handleClient(clientID uint64) {
 
 	reader := nc
 
+	nc.Write([]byte("INFO {}"))
+	nc.Write([]byte(CRLF))
+
 	for {
 		n, err := reader.Read(buffer)
 		if n == 0 && err != nil {
