@@ -33,8 +33,6 @@ func NewServer(cfg *Config) *Server {
 func (s *Server) acceptConn(conn net.Conn) {
 	client := NewClient(conn, s)
 
-	go client.writeLoop()
-
 	s.mu.Lock()
 
 	s.clients[client.cid] = client
@@ -45,7 +43,9 @@ func (s *Server) acceptConn(conn net.Conn) {
 
 	fmt.Printf("Client %d connected\n", client.cid)
 
-	s.handleClient(client.cid)
+	go s.handleClient(client.cid)
+
+	go client.writeLoop()
 }
 
 func (s *Server) getClient(cid uint64) *client {
@@ -87,12 +87,16 @@ func (s *Server) handleClient(clientID uint64) {
 		fmt.Printf("Client %d disconnected\n", clientID)
 	}()
 
-	buffer := make([]byte, 1024)
+	nc := client.nc
+
+	buffer := make([]byte, 512)
+
+	reader := nc
 
 	for {
-		n, err := client.nc.Read(buffer)
-		if err != nil {
-			log.Println("Failed to read data.", err)
+		n, err := reader.Read(buffer)
+		if n == 0 && err != nil {
+			log.Println("Failed to read data:", err)
 			return
 		}
 
