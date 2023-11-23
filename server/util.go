@@ -44,3 +44,10 @@ func bytesToString(b []byte) string {
 	p := unsafe.SliceData(b)
 	return unsafe.String(p, len(b))
 }
+
+func stringToByteSlice(str string) []byte {
+	if str == "" {
+		return nil
+	}
+	return unsafe.Slice(unsafe.StringData(str), len(str))
+}
