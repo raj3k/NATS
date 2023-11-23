@@ -229,7 +229,6 @@ func (c *client) parse(buf []byte) error {
 				if err != nil {
 					return err
 				}
-				//TODO: think if this logic is sufficient for now
 				c.state = MSG_PAYLOAD
 			default:
 				if c.argBuf != nil {

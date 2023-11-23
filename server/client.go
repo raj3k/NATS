@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"net"
 	"sync"
 	"sync/atomic"
@@ -70,13 +71,35 @@ func (c *client) processInboundMessage(msg []byte) {
 }
 
 func (c *client) deliverMsg(sub *subscription, topic, msg []byte) {
-	// client := sub.client
 
+	mh := c.messageHeader(sub, topic, msg)
+
+	sub.client.out.nb = append(sub.client.out.nb, mh)
 	sub.client.out.nb = append(sub.client.out.nb, msg)
 	sub.client.out.nb = append(sub.client.out.nb, []byte(CRLF))
+}
 
-	// c.out.nb = append(c.out.nb, msg)
-	// c.out.nb = append(c.out.nb, []byte(CRLF))
+func (c *client) messageHeader(sub *subscription, topic, msg []byte) []byte {
+
+	msgProto := []byte{77, 83, 71}
+
+	var mh []byte
+
+	mh = append(mh, msgProto...)
+	mh = append(mh, ' ')
+
+	mh = append(mh, topic...)
+	mh = append(mh, ' ')
+
+	mh = append(mh, sub.sid...)
+	mh = append(mh, ' ')
+
+	intBytes := []byte(fmt.Sprintf("%d", c.pa.size))
+
+	mh = append(mh, intBytes...)
+	mh = append(mh, stringToByteSlice(CRLF)...)
+
+	return mh
 }
 
 func (c *client) processPing() {
