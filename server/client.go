@@ -97,7 +97,7 @@ func (c *client) messageHeader(sub *subscription, topic, msg []byte) []byte {
 	intBytes := []byte(fmt.Sprintf("%d", c.pa.size))
 
 	mh = append(mh, intBytes...)
-	mh = append(mh, stringToByteSlice(CRLF)...)
+	mh = append(mh, CRLF...)
 
 	return mh
 }
