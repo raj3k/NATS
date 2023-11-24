@@ -1,8 +1,8 @@
 package server
 
 import (
-	"fmt"
 	"net"
+	"strconv"
 	"sync"
 	"sync/atomic"
 )
@@ -81,6 +81,7 @@ func (c *client) deliverMsg(sub *subscription, topic, msg []byte) {
 
 func (c *client) messageHeader(sub *subscription, topic, msg []byte) []byte {
 
+	// 77 M 83 S 71 G
 	msgProto := []byte{77, 83, 71}
 
 	var mh []byte
@@ -94,9 +95,9 @@ func (c *client) messageHeader(sub *subscription, topic, msg []byte) []byte {
 	mh = append(mh, sub.sid...)
 	mh = append(mh, ' ')
 
-	intBytes := []byte(fmt.Sprintf("%d", c.pa.size))
+	n := strconv.Itoa(c.pa.size)
 
-	mh = append(mh, intBytes...)
+	mh = append(mh, n...)
 	mh = append(mh, CRLF...)
 
 	return mh
