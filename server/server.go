@@ -15,6 +15,7 @@ type Server struct {
 	topics       map[string]Queue
 	totalClients uint64
 	subs         *Sublist
+	http         net.Listener
 }
 
 type Config struct {
@@ -56,16 +57,21 @@ func (s *Server) getClient(cid uint64) *client {
 
 func (s *Server) Run() {
 	addr := s.Config.ListenAddr
-	l, err := net.Listen("tcp", addr)
+	httpListener, err := net.Listen("tcp", addr)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	defer l.Close()
+
+	s.mu.Lock()
+	s.http = httpListener
+	s.mu.Unlock()
+
+	defer s.http.Close()
 
 	log.Println("Server is running on:", addr)
 
 	for {
-		conn, err := l.Accept()
+		conn, err := s.http.Accept()
 		if err != nil {
 			log.Println("Failed to accept conn.", err)
 			continue
